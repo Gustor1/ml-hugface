@@ -1,0 +1,56 @@
+name: Train IMDb Sentiment Model
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  train-and-upload:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download dataset
+        run: |
+          # Télécharger le CSV depuis ton repo (si commité) ou utiliser un lien public
+          # Option 1: si le CSV est dans le repo (non ignoré)
+          if [ -f "imdb_top_500.csv" ]; then
+            echo "✅ Dataset found in repo"
+          else
+            echo "⚠️ Dataset not found, using sample for demo"
+            # Créer un mini dataset de test pour que le workflow ne plante pas
+            python -c "
+            import pandas as pd
+            data = {'text': ['great movie', 'terrible film', 'loved it', 'boring'], 
+                    'label': [1, 0, 1, 0], 
+                    'rating': [9, 2, 10, 3]}
+            pd.DataFrame(data).to_csv('imdb_top_500.csv', index=False)
+            "
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Train model
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_REPO_ID: ${{ secrets.HF_REPO_ID }}
+        run: python train.py
+
+      - name: Upload artifacts (optionnel)
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-files
+          path: |
+            model.pkl
+            vectorizer.pkl
+            config.json

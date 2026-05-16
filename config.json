@@ -1,0 +1,6 @@
+{
+  "model_type": "LogisticRegression",
+  "vectorizer": "TfidfVectorizer",
+  "max_features": 5000,
+  "accuracy": 0.81
+}
