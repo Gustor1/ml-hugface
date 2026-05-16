@@ -59,3 +59,35 @@ with open("config.json", "w") as f:
     json.dump(config, f, indent=2)
 
 print("💾 Modèles sauvegardés")
+
+import os
+from huggingface_hub import HfApi
+
+# Récupération des variables d'environnement (fournies par GitHub Actions)
+hf_token = os.environ.get("HF_TOKEN")
+hf_repo_id = os.environ.get("HF_REPO_ID")
+
+if hf_token and hf_repo_id:
+    print(f"🚀 Tentative d'upload vers Hugging Face : {hf_repo_id}")
+    
+    try:
+        api = HfApi(token=hf_token)
+        # Créer le repo si il n'existe pas encore
+        api.create_repo(repo_id=hf_repo_id, repo_type="model", exist_ok=True)
+        
+        # Uploader les fichiers un par un
+        for file in ["model.pkl", "vectorizer.pkl", "config.json"]:
+            api.upload_file(
+                path_or_fileobj=file,
+                path_in_repo=file,
+                repo_id=hf_repo_id,
+                repo_type="model"
+            )
+            print(f"✅ {file} uploadé !")
+            
+        print(f"🎉 Modèle disponible sur : https://huggingface.co/{hf_repo_id}")
+        
+    except Exception as e:
+        print(f"❌ Erreur lors de l'upload HF : {e}")
+else:
+    print("ℹ️ Pas de token ou ID repo détecté (normal si test en local).")
